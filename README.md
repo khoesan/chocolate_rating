@@ -41,32 +41,42 @@ Dataset yang digunakan dalam proyek ini berasal dari [Flavors of Cacao](https://
 ### Jumlah Data
 
 * Total **1.795 baris data** (sampel cokelat)
-* Jumlah **10 kolom fitur**
+* Jumlah **8 kolom**
+* Nama-nama kolom awal: **REF, Review Date, Company (Maker-if known), Specific Bean Origin (or Name), Cocoa Percent, Company Location, Rating, Bean Type, Broad Bean Origin**
 
 ### Deskripsi Kolom
 
 Berikut beberapa kolom penting dari dataset:
 
-* `Company (Manufacturer)`: Nama produsen cokelat.
-* `Company Location`: Lokasi negara dari perusahaan pembuat.
-* `Review Date`: Tahun ulasan dilakukan.
-* `Rating`: Skor rating dari 1.0 hingga 5.0 (target untuk klasifikasi).
+* `Company (Maker-if known)`: Nama produsen cokelat.
+* `Specific Bean Origin (or Name)`: Lokasi asal spesifik dari biji kakao.
+* `REF`: ID referensi.
+* `Review Date`: Tahun review dilakukan.
 * `Cocoa Percent`: Persentase kandungan kakao.
-* `Bean Origin`: Negara asal biji kakao.
-* `Ingredients`: Tipe bahan yang digunakan dalam cokelat.
-* `Most Memorable Characteristics`: Karakteristik rasa yang menonjol (jika tersedia).
+* `Company Location`: Negara tempat perusahaan berada.
+* `Bean Type`: Jenis biji kakao (jika diketahui).
+* `Broad Bean Origin`: Asal umum biji kakao.
 
 ### Kondisi Data
 
-Beberapa kondisi data yang ditemukan melalui eksplorasi:
+* **Missing values:**
+  * `Bean Type`: 47 nilai hilang
+  * `Broad Bean Origin`: 10 nilai hilang
+* **Data duplikat:** Tidak ditemukan baris duplikat
+* **Outlier:** Distribusi nilai `Rating` berkisar antara 1.0 hingga 5.0, dengan mayoritas berada di rentang 2.5 hingga 4.0. Beberapa produk memiliki rating ekstrem (di bawah 2.0 atau di atas 4.5) yang dapat dianggap sebagai outlier.
 
-| Masalah                | Kolom Terkait                                   | Jumlah / Penjelasan                                                                     |
-| ---------------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------- |
-| Missing Values         | `Bean Origin`, `Ingredients`, `Characteristics` | Terdapat nilai kosong di lebih dari 100 entri untuk kolom-kolom ini.                    |
-| Duplikasi              | Keseluruhan baris                               | Terdapat **74 baris duplikat**, telah dihapus pada tahap preprocessing.                 |
-| Outlier                | `Cocoa Percent`                                 | Ada data aneh seperti 5% dan 100%, telah dibersihkan menjadi rentang realistis 40%-90%. |
-| Format Tidak Konsisten | `Cocoa Percent`                                 | Format awal berupa string persentase seperti `"70%"`, dikonversi ke float.              |
+### Visualisasi Distribusi Rating
 
+```python
+plt.figure(figsize=(8, 4))
+sns.histplot(df['Rating'], bins=20, kde=True)
+plt.title('Distribusi Rating Cokelat')
+plt.xlabel('Rating')
+plt.ylabel('Jumlah Produk')
+plt.show()
+```
+
+Grafik di atas menunjukkan bahwa sebagian besar produk cokelat memiliki rating antara 3.0 dan 4.0.
 Data dibersihkan dan dikategorikan ulang pada kolom `Rating` untuk menghasilkan label klasifikasi: `low`, `medium`, dan `high`.
 EDA menunjukkan rating sebagian besar berada di kisaran 2.5–3.5 dan cocoa percent umum berada di 70%.
 

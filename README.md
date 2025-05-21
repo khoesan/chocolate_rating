@@ -41,8 +41,7 @@ Dataset yang digunakan dalam proyek ini berasal dari [Flavors of Cacao](https://
 ### Jumlah Data
 
 * Total **1.795 baris data** (sampel cokelat)
-* Jumlah **8 kolom**
-* Nama-nama kolom awal: **REF, Review Date, Company (Maker-if known), Specific Bean Origin (or Name), Cocoa Percent, Company Location, Rating, Bean Type, Broad Bean Origin**
+* Jumlah **9 kolom**
 
 ### Deskripsi Kolom
 
@@ -54,6 +53,7 @@ Berikut beberapa kolom penting dari dataset:
 * `Review Date`: Tahun review dilakukan.
 * `Cocoa Percent`: Persentase kandungan kakao.
 * `Company Location`: Negara tempat perusahaan berada.
+* `Rating`: Rating dari 1.0–5.0.
 * `Bean Type`: Jenis biji kakao (jika diketahui).
 * `Broad Bean Origin`: Asal umum biji kakao.
 

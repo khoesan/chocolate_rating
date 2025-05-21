@@ -32,22 +32,42 @@ Prediksi ini berguna untuk:
 * Melakukan hyperparameter tuning untuk meningkatkan performa model.
 * Menggunakan evaluasi berdasarkan classification report dan confusion matrix untuk menilai performa model.
 
+---
+
 ## Data Understanding
 
-Dataset yang digunakan berasal dari [Flavors of Cacao](https://www.kaggle.com/datasets/rtatman/chocolate-bar-ratings). Dataset ini berisi ulasan terhadap berbagai cokelat batangan dari berbagai perusahaan di seluruh dunia.
+Dataset yang digunakan dalam proyek ini berasal dari [Flavors of Cacao](https://www.kaggle.com/datasets/rtatman/chocolate-bar-ratings), yang memuat informasi mengenai berbagai cokelat batangan dari berbagai negara, termasuk rating rasa, produsen, asal biji kakao, dan tahun produksi.
 
-### Variabel-variabel pada dataset:
+### Jumlah Data
 
-* **Company (Maker-if known)**: Nama produsen cokelat.
-* **Specific Bean Origin (or Name)**: Lokasi asal spesifik dari biji kakao.
-* **REF**: ID referensi.
-* **Review Date**: Tahun review dilakukan.
-* **Cocoa Percent**: Persentase kandungan kakao.
-* **Company Location**: Negara tempat perusahaan berada.
-* **Rating**: Rating dari 1.0–5.0.
-* **Bean Type**: Jenis biji kakao (jika diketahui).
-* **Broad Bean Origin**: Asal umum biji kakao.
+* Total **1.795 baris data** (sampel cokelat)
+* Jumlah **10 kolom fitur**
 
+### Deskripsi Kolom
+
+Berikut beberapa kolom penting dari dataset:
+
+* `Company (Manufacturer)`: Nama produsen cokelat.
+* `Company Location`: Lokasi negara dari perusahaan pembuat.
+* `Review Date`: Tahun ulasan dilakukan.
+* `Rating`: Skor rating dari 1.0 hingga 5.0 (target untuk klasifikasi).
+* `Cocoa Percent`: Persentase kandungan kakao.
+* `Bean Origin`: Negara asal biji kakao.
+* `Ingredients`: Tipe bahan yang digunakan dalam cokelat.
+* `Most Memorable Characteristics`: Karakteristik rasa yang menonjol (jika tersedia).
+
+### Kondisi Data
+
+Beberapa kondisi data yang ditemukan melalui eksplorasi:
+
+| Masalah                | Kolom Terkait                                   | Jumlah / Penjelasan                                                                     |
+| ---------------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Missing Values         | `Bean Origin`, `Ingredients`, `Characteristics` | Terdapat nilai kosong di lebih dari 100 entri untuk kolom-kolom ini.                    |
+| Duplikasi              | Keseluruhan baris                               | Terdapat **74 baris duplikat**, telah dihapus pada tahap preprocessing.                 |
+| Outlier                | `Cocoa Percent`                                 | Ada data aneh seperti 5% dan 100%, telah dibersihkan menjadi rentang realistis 40%-90%. |
+| Format Tidak Konsisten | `Cocoa Percent`                                 | Format awal berupa string persentase seperti `"70%"`, dikonversi ke float.              |
+
+Data dibersihkan dan dikategorikan ulang pada kolom `Rating` untuk menghasilkan label klasifikasi: `low`, `medium`, dan `high`.
 EDA menunjukkan rating sebagian besar berada di kisaran 2.5–3.5 dan cocoa percent umum berada di 70%.
 
 ## Data Preparation
@@ -71,49 +91,89 @@ EDA menunjukkan rating sebagian besar berada di kisaran 2.5–3.5 dan cocoa perc
 * Encoding dan transformasi numerik dibutuhkan agar model bisa mengolah data kategorikal dan string.
 * Binning rating menjadi kategori klasifikasi agar masalah dapat ditangani sebagai classification.
 
+---
+
 ## Modeling
 
-### Algoritma yang Digunakan:
+### Algoritma yang Digunakan
 
-* **Random Forest Classifier**
+Model yang digunakan dalam proyek ini adalah **Random Forest Classifier** dari pustaka `scikit-learn`. Random Forest adalah algoritma ensemble berbasis pohon keputusan yang menggabungkan beberapa model Decision Tree untuk meningkatkan akurasi dan mengurangi risiko overfitting.
 
-Model dilatih menggunakan `RandomForestClassifier` dari scikit-learn dengan parameter default terlebih dahulu, kemudian dilakukan hyperparameter tuning menggunakan `GridSearchCV`.
+### Cara Kerja Random Forest (Konseptual)
 
-```python
-param_grid = {
-    'n_estimators': [100, 200],
-    'max_depth': [None, 10, 20],
-    'min_samples_split': [2, 5],
-    'min_samples_leaf': [1, 2]
-}
+1. **Bootstrap Sampling (Bagging)**
+   Model membuat beberapa *subset* dari data latih menggunakan pengambilan sampel acak dengan pengembalian.
 
-grid_search = GridSearchCV(
-    RandomForestClassifier(random_state=42),
-    param_grid,
-    cv=3,
-    scoring='accuracy',
-    n_jobs=-1
-)
-```
+2. **Pembuatan Pohon Keputusan (Decision Trees)**
+   Setiap pohon dilatih dengan subset berbeda dan melakukan split berdasarkan subset fitur yang dipilih secara acak pada tiap percabangan.
 
-### Kelebihan dan Kekurangan Random Forest:
+3. **Voting Mayoritas**
+   Untuk klasifikasi, setiap pohon memberikan prediksinya, dan hasil akhir ditentukan melalui *mayoritas suara* (voting).
 
-**Kelebihan:**
+---
 
-* Tahan terhadap overfitting.
-* Mendukung fitur numerik dan kategorikal.
-* Menyediakan feature importance.
+### Penjelasan Implementasi
 
-**Kekurangan:**
+1. **Pemrosesan Fitur dan Target**
 
-* Model kompleks dan lebih sulit diinterpretasikan.
-* Konsumsi memori tinggi saat banyak pohon digunakan.
+   * Fitur yang digunakan: `ref`, `review_date`, `cocoa_percent`, `company_location`, `bean_type`, `broad_bean_origin`.
+   * Target: `rating_label` (klasifikasi ke dalam kelas `low`, `medium`, dan `high`).
 
-### Improvement:
+2. **Split Data**
+   Dataset dibagi menjadi:
 
-Model ditingkatkan dengan tuning hyperparameter dan ditemukan konfigurasi terbaik melalui GridSearchCV.
+   * 80% data latih (`X_train`, `y_train`)
+   * 20% data uji (`X_test`, `y_test`)
+   * Dengan parameter `random_state=42` dan `stratify=y` untuk menjaga proporsi label.
 
-## Evaluation
+3. **Training Model Dasar**
+   Model dasar Random Forest pertama-tama dilatih menggunakan **parameter default**:
+
+   ```python
+   rf_clf = RandomForestClassifier(random_state=42)
+   rf_clf.fit(X_train, y_train)
+   ```
+
+4. **Tuning Hyperparameter**
+   Dilakukan pencarian parameter terbaik menggunakan `GridSearchCV` dengan *cross-validation* 3-fold dan metrik evaluasi `accuracy`. Parameter yang diuji meliputi:
+
+   ```python
+   param_grid = {
+       'n_estimators': [100, 200],
+       'max_depth': [None, 10, 20],
+       'min_samples_split': [2, 5],
+       'min_samples_leaf': [1, 2]
+   }
+   ```
+
+   Model terbaik dari hasil pencarian ini disimpan di `best_model`.
+
+---
+
+### Evaluasi
+
+1. **Prediksi dan Evaluasi**
+   Model terbaik (`best_model`) digunakan untuk memprediksi data uji, dan hasilnya dievaluasi menggunakan:
+
+   * **Classification Report**
+     Mencakup akurasi, precision, recall, dan f1-score untuk masing-masing kelas (`low`, `medium`, `high`).
+
+   * **Confusion Matrix**
+     Visualisasi performa model terhadap prediksi benar dan salah.
+
+   ```python
+   y_pred = best_model.predict(X_test)
+   print(classification_report(y_test, y_pred))
+   ```
+
+2. **Visualisasi**
+   Confusion matrix divisualisasikan menggunakan `matplotlib`:
+
+   ```python
+   cm = confusion_matrix(y_test, y_pred, labels=['low', 'medium', 'high'])
+   disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['low', 'medium', 'high'])
+   disp.plot(cmap='Blues')
+   ```
 
 ### Metrik Evaluasi:
 
